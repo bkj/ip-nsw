@@ -33,8 +33,8 @@ namespace hnswlib {
       ll_locks(maxElements), elementLevels(maxElements) {
       maxelements_ = maxElements;
 
-      data_size_ = s->get_data_size();
-      fstdistfunc_ = s->get_dist_func();
+      data_size_       = s->get_data_size();
+      fstdistfunc_     = s->get_dist_func();
       dist_func_param_ = s->get_dist_func_param();
       M_ = M;
       maxM_ = M_;
@@ -214,6 +214,8 @@ namespace hnswlib {
       std::priority_queue< std::pair< dist_t, tableint  >, vector<pair<dist_t, tableint>>, CompareByFirst> candidateSet;
       dist_t dist = fstdistfunc_(datapoint, getDataByInternalId(ep), dist_func_param_);
       dist_calc++;
+
+      // std::cerr << "dist:" << dist << " ep:" << ep << std::endl;
       topResults.emplace(dist, ep);
       candidateSet.emplace(-dist, ep);
       massVisited[ep] = currentV;
@@ -222,6 +224,7 @@ namespace hnswlib {
       while (!candidateSet.empty()) {
 
         std::pair<dist_t, tableint> curr_el_pair = candidateSet.top();
+        std::cerr << "curr_el_pair.first:" << curr_el_pair.first << " curr_el_pair.second:" << curr_el_pair.second << std::endl;
 
         if ((-curr_el_pair.first) > lowerBound) {
           break;
@@ -231,15 +234,15 @@ namespace hnswlib {
         tableint curNodeNum = curr_el_pair.second;
         int *data = (int *)(data_level0_memory_ + curNodeNum * size_data_per_element_ + offsetLevel0_);
         int size = *data;
-        _mm_prefetch((char *)(massVisited + *(data + 1)), _MM_HINT_T0);
-        _mm_prefetch((char *)(massVisited + *(data + 1) + 64), _MM_HINT_T0);
-        _mm_prefetch(data_level0_memory_ + (*(data + 1)) * size_data_per_element_ + offsetData_, _MM_HINT_T0);
-        _mm_prefetch((char *)(data + 2), _MM_HINT_T0);
+        // _mm_prefetch((char *)(massVisited + *(data + 1)), _MM_HINT_T0);
+        // _mm_prefetch((char *)(massVisited + *(data + 1) + 64), _MM_HINT_T0);
+        // _mm_prefetch(data_level0_memory_ + (*(data + 1)) * size_data_per_element_ + offsetData_, _MM_HINT_T0);
+        // _mm_prefetch((char *)(data + 2), _MM_HINT_T0);
 
         for (int j = 1; j <= size; j++) {
           int tnum = *(data + j);
-          _mm_prefetch((char *)(massVisited + *(data + j + 1)), _MM_HINT_T0);
-          _mm_prefetch(data_level0_memory_ + (*(data + j + 1)) * size_data_per_element_ + offsetData_, _MM_HINT_T0);////////////
+          // _mm_prefetch((char *)(massVisited + *(data + j + 1)), _MM_HINT_T0);
+          // _mm_prefetch(data_level0_memory_ + (*(data + j + 1)) * size_data_per_element_ + offsetData_, _MM_HINT_T0);////////////
           if (!(massVisited[tnum] == currentV)) {
 
             massVisited[tnum] = currentV;
@@ -249,8 +252,7 @@ namespace hnswlib {
             dist_calc++;
             if (topResults.top().first > dist || topResults.size() < ef) {
               candidateSet.emplace(-dist, tnum);
-              _mm_prefetch(data_level0_memory_ + candidateSet.top().second * size_data_per_element_ + offsetLevel0_,///////////
-                _MM_HINT_T0);////////////////////////
+              // _mm_prefetch(data_level0_memory_ + candidateSet.top().second * size_data_per_element_ + offsetLevel0_, _MM_HINT_T0);
 
               topResults.emplace(dist, tnum);
 
@@ -447,7 +449,7 @@ namespace hnswlib {
 
 
       memset(data_level0_memory_ + cur_c * size_data_per_element_ + offsetLevel0_, 0, size_data_per_element_);
-      // Initialisation of the data and label            
+      // Initialisation of the data and label
       memcpy(getExternalLabeLp(cur_c), &label, sizeof(labeltype));
       memcpy(getDataByInternalId(cur_c), datapoint, data_size_);
 
@@ -515,9 +517,18 @@ namespace hnswlib {
         maxlevel_ = curlevel;
       }
     };
+
+
     std::priority_queue< std::pair< dist_t, labeltype >> searchKnn(void *query_data, int k) {
       tableint currObj = enterpoint_node;
       dist_t curdist = fstdistfunc_(query_data, getDataByInternalId(enterpoint_node), dist_func_param_);
+
+      std::cerr << "-----------------------------------" << std::endl;
+      std::cerr << "enterpoint_node:"  << enterpoint_node                   << std::endl;
+      std::cerr << "\texternal_label:" << getExternalLabel(enterpoint_node) << std::endl;
+      std::cerr << "\tcurdist:"        << curdist                           << std::endl;
+      std::cerr << "maxlevel_:" << maxlevel_ << std::endl;
+
       dist_calc++;
       for (int level = maxlevel_; level > 0; level--) {
         bool changed = true;
@@ -526,11 +537,14 @@ namespace hnswlib {
           int *data;
           data = (int *)(linkLists_[currObj] + (level - 1) * size_links_per_element_);
           int size = *data;
+          // std::cerr << "size:" << size << std::endl;
           tableint *datal = (tableint *)(data + 1);
           for (int i = 0; i < size; i++) {
+            // std::cerr << "i:" << i << std::endl;
             tableint cand = datal[i];
             if (cand<0 || cand>maxelements_)
               throw runtime_error("cand error");
+
             dist_t d = fstdistfunc_(query_data, getDataByInternalId(cand), dist_func_param_);
             dist_calc++;
             if (d < curdist) {
@@ -539,10 +553,15 @@ namespace hnswlib {
               changed = true;
             }
           }
+          if(changed) {
+            std::cerr << "new currObj=" << getExternalLabel(currObj) << std::endl;
+          } else {
+            std::cerr << "dropping level" << std::endl;
+          }
         }
       }
 
-
+      // std::cerr << "searchBaseLayerST" << std::endl;
       std::priority_queue< std::pair< dist_t, tableint  >, vector<pair<dist_t, tableint>>, CompareByFirst> topResults = searchBaseLayerST(currObj, query_data, ef_);
       std::priority_queue< std::pair< dist_t, labeltype >> results;
       while (topResults.size() > k) {
@@ -553,44 +572,46 @@ namespace hnswlib {
         results.push(std::pair<dist_t, labeltype>(rez.first, getExternalLabel(rez.second)));
         topResults.pop();
       }
+      // std::cerr << "searchKnn: done" << std::endl;
       return results;
     };
 
-    std::priority_queue< std::pair< dist_t, tableint>> searchKnnInternal(void *query_data, int k) {
-      tableint currObj = enterpoint_node;
-      dist_t curdist = fstdistfunc_(query_data, getDataByInternalId(enterpoint_node), dist_func_param_);
-      dist_calc++;
-      for (int level = maxlevel_; level > 0; level--) {
-        bool changed = true;
-        while (changed) {
-          changed = false;
-          int *data;
-          data = (int *)(linkLists_[currObj] + (level - 1) * size_links_per_element_);
-          int size = *data;
-          tableint *datal = (tableint *)(data + 1);
-          for (int i = 0; i < size; i++) {
-            tableint cand = datal[i];
-            if (cand<0 || cand>maxelements_)
-              throw runtime_error("cand error");
-            dist_t d = fstdistfunc_(query_data, getDataByInternalId(cand), dist_func_param_);
-            dist_calc++;
-            if (d < curdist) {
-              curdist = d;
-              currObj = cand;
-              changed = true;
-            }
-          }
-        }
-      }
+    // std::priority_queue< std::pair< dist_t, tableint>> searchKnnInternal(void *query_data, int k) {
+    //   tableint currObj = enterpoint_node;
+    //   dist_t curdist = fstdistfunc_(query_data, getDataByInternalId(enterpoint_node), dist_func_param_);
+    //   dist_calc++;
+    //   for (int level = maxlevel_; level > 0; level--) {
+    //     bool changed = true;
+    //     while (changed) {
+    //       changed = false;
+    //       int *data;
+    //       data = (int *)(linkLists_[currObj] + (level - 1) * size_links_per_element_);
+    //       int size = *data;
+    //       tableint *datal = (tableint *)(data + 1);
+    //       for (int i = 0; i < size; i++) {
+    //         tableint cand = datal[i];
+    //         if (cand<0 || cand>maxelements_)
+    //           throw runtime_error("cand error");
+    //         dist_t d = fstdistfunc_(query_data, getDataByInternalId(cand), dist_func_param_);
+    //         dist_calc++;
+    //         if (d < curdist) {
+    //           curdist = d;
+    //           currObj = cand;
+    //           changed = true;
+    //         }
+    //       }
+    //     }
+    //   }
 
-      //std::priority_queue< std::pair< dist_t, tableint  >> topResults = searchBaseLayer(currObj, query_data, 0);
-      std::priority_queue< std::pair< dist_t, tableint  >> topResults = searchBaseLayerST(currObj, query_data, ef_);
-      while (topResults.size() > k) {
-        topResults.pop();
-      }
-      return topResults;
-    };
-    void       SaveIndex(const string &location)
+    //   //std::priority_queue< std::pair< dist_t, tableint  >> topResults = searchBaseLayer(currObj, query_data, 0);
+    //   std::priority_queue< std::pair< dist_t, tableint  >> topResults = searchBaseLayerST(currObj, query_data, ef_);
+    //   while (topResults.size() > k) {
+    //     topResults.pop();
+    //   }
+    //   return topResults;
+    // };
+
+    void SaveIndex(const string &location)
     {
 
       cout << "Saving index to " << location.c_str() << "\n";
@@ -623,9 +644,7 @@ namespace hnswlib {
       output.close();
     }
 
-    void       LoadIndex(const string &location, SpaceInterface<dist_t> *s)
-    {
-
+    void LoadIndex(const string &location, SpaceInterface<dist_t> *s) {
 
       //cout << "Loading index from " << location;
       std::ifstream input(location, std::ios::binary);
@@ -639,53 +658,93 @@ namespace hnswlib {
       readBinaryPOD(input, offsetData_);
       readBinaryPOD(input, maxlevel_);
       readBinaryPOD(input, enterpoint_node);
-
       readBinaryPOD(input, maxM_);
       readBinaryPOD(input, maxM0_);
       readBinaryPOD(input, M_);
       readBinaryPOD(input, mult_);
       readBinaryPOD(input, efConstruction_);
-      cout << efConstruction_ << "\n";
 
+      // >>
+      std::cerr << "offsetLevel0_:" << offsetLevel0_ << std::endl;
+      std::cerr << "maxelements_:" << maxelements_ << std::endl;
+      std::cerr << "cur_element_count:" << cur_element_count << std::endl;
+      std::cerr << "size_data_per_element_:" << size_data_per_element_ << std::endl;
+      std::cerr << "label_offset_:" << label_offset_ << std::endl;
+      std::cerr << "offsetData_:" << offsetData_ << std::endl;
+      std::cerr << "maxlevel_:" << maxlevel_ << std::endl;
+      std::cerr << "enterpoint_node:" << enterpoint_node << std::endl;
+      std::cerr << "maxM_:" << maxM_ << std::endl;
+      std::cerr << "maxM0_:" << maxM0_ << std::endl;
+      std::cerr << "M_:" << M_ << std::endl;
+      std::cerr << "mult_:" << mult_ << std::endl;
+      std::cerr << "efConstruction_:" << efConstruction_ << std::endl;
+      // <<
 
+      cerr << "efConstruction_:" << efConstruction_ << "\n";
 
-      data_size_ = s->get_data_size();
-      fstdistfunc_ = s->get_dist_func();
+      data_size_       = s->get_data_size();
+      fstdistfunc_     = s->get_dist_func();
       dist_func_param_ = s->get_dist_func_param();
 
       data_level0_memory_ = (char *)malloc(maxelements_*size_data_per_element_);
       input.read(data_level0_memory_, maxelements_*size_data_per_element_);
-
+      // >>
+      for(int i = 0; i < maxelements_; i++) {
+        int level = 0;
+        int *data = (int *)(data_level0_memory_ + i * size_data_per_element_ + offsetLevel0_);
+        int size  = *data;
+        for (int j = 1; j <= size; j++) {
+          int neib = *(data + j);
+          std::cout << level << " " << getExternalLabel(i) << " " << getExternalLabel(neib) << std::endl;
+        }
+      }
+      // <<
 
       size_links_per_element_ = maxM_ * sizeof(tableint) + sizeof(linklistsizeint);
 
       visitedlistpool = new VisitedListPool(1, maxelements_);
 
-
       linkLists_ = (char **)malloc(sizeof(void *) * maxelements_);
-      cout << maxelements_ << "\n";
+      cerr << "maxelements_" << maxelements_ << "\n";
       elementLevels = vector<int>(maxelements_);
       revSize_ = 1.0 / mult_;
       ef_ = 10;
-      for (size_t i = 0; i < maxelements_; i++) {
+      for (int i = 0; i < maxelements_; i++) {
         unsigned int linkListSize;
         readBinaryPOD(input, linkListSize);
         if (linkListSize == 0) {
           elementLevels[i] = 0;
-
           linkLists_[i] = nullptr;
-        }
-        else {
+        } else {
           elementLevels[i] = linkListSize / size_links_per_element_;
-          linkLists_[i] = (char *)malloc(linkListSize);
+          linkLists_[i]    = (char *)malloc(linkListSize);
           input.read(linkLists_[i], linkListSize);
+
+          // if(i >= enterpoint_node) {
+            // std::cout << "i=" << i << std::endl;
+            // std::cout << "elementLevels[i]=" << elementLevels[i] << std::endl;
+            // std::cout << "linkListSize=" << linkListSize << std::endl;
+            for (int level = elementLevels[i]; level > 0; level--) {
+              // std::cout << "level=" << level << std::endl;
+              int *data;
+              data = (int *)(linkLists_[i] + (level - 1) * size_links_per_element_);
+              int size = *data;
+              // std::cout << "size=" << size << std::endl;
+              tableint *datal = (tableint *)(data + 1);
+              for (int j = 0; j < size; j++) {
+                tableint neib = datal[j];
+                std::cout << level << " " << getExternalLabel(i) << " " << getExternalLabel(neib) << std::endl;
+              }
+            }
+          // }
         }
       }
-
+      // std::cerr << "a=" << a << std::endl;
+      // std::cerr << "b=" << b << std::endl;
 
       input.close();
       size_t predicted_size_per_element = size_data_per_element_ + sizeof(void*) + 8 + 8 + 2 * 8;
-      cout << "Loaded index, predicted size=" << maxelements_*(predicted_size_per_element) / (1000 * 1000) << "\n";
+      cerr << "Loaded index, predicted size=" << maxelements_*(predicted_size_per_element) / (1000 * 1000) << "\n";
       return;
     }
   };

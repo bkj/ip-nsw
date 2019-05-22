@@ -46,7 +46,7 @@ void printHelpMessage()
     std::cerr << "  --efSearch        " << "efSearch parameter. Default: " << defaultEfSearch << std::endl;
     std::cerr << "  --topK            " << "Top size for retrieval. Default: " << defaultTopK << std::endl;
     std::cerr << "  --output          " << "Filename to print the result. Default: " << "stdout" << std::endl;
-    
+
 }
 
 void printError(std::string err)
@@ -74,11 +74,11 @@ int main(int argc, char** argv) {
     std::string queryname;
 
     hnswlib::HierarchicalNSW<float> *appr_alg;
-    
+
     for (int i = 1; i < argc; i++) {
         if (std::string(argv[i]) == "--h" || std::string(argv[i]) == "--help") {
             printHelpMessage();
-           return 0; 
+           return 0;
         }
     }
     for (int i = 1; i < argc - 1; i++) {
@@ -99,9 +99,9 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    std::cout << "Mode: " << mode << std::endl;
+    std::cerr << "Mode: " << mode << std::endl;
 
-    
+
     if (mode == "database") {
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--d" || std::string(argv[i]) == "--data" || std::string(argv[i]) == "--database") {
@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
             printError("Database file was not specified");
             return 0;
         }
-        std::cout << "Database file: " << dataname << std::endl;
+        std::cerr << "Database file: " << dataname << std::endl;
 
 
 
@@ -136,9 +136,9 @@ int main(int argc, char** argv) {
             printError("Database size was not specified");
             return 0;
         }
-        std::cout << "Database size: " << vecsize << std::endl;
-        
-        
+        std::cerr << "Database size: " << vecsize << std::endl;
+
+
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--dataDim" || std::string(argv[i]) == "--dimension" || std::string(argv[i]) == "--databaseDimension") {
                 if (sscanf(argv[i + 1], "%d", &vecdim) != 1 || vecdim <= 0) {
@@ -152,9 +152,9 @@ int main(int argc, char** argv) {
             printError("Database dimension was not specified");
             return 0;
         }
-        std::cout << "Database dimension: " << vecdim << std::endl;
-        
-        
+        std::cerr << "Database dimension: " << vecdim << std::endl;
+
+
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--outGraph" || std::string(argv[i]) == "--outputGraph") {
                 std::ofstream outGraph(argv[i + 1]);
@@ -171,10 +171,10 @@ int main(int argc, char** argv) {
             printError("Filename of the output graph was not specified");
             return 0;
         }
-        std::cout << "Output graph: " << graphname << std::endl;
+        std::cerr << "Output graph: " << graphname << std::endl;
 
 
-        
+
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--efConstruction") {
                 if (sscanf(argv[i + 1], "%d", &efConstruction) != 1 || efConstruction <= 0) {
@@ -184,8 +184,8 @@ int main(int argc, char** argv) {
                 break;
             }
         }
-        std::cout << "efConstruction: " << efConstruction << std::endl;
-        
+        std::cerr << "efConstruction: " << efConstruction << std::endl;
+
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--M") {
                 if (sscanf(argv[i + 1], "%d", &M) != 1 || M <= 0) {
@@ -195,18 +195,18 @@ int main(int argc, char** argv) {
                 break;
             }
         }
-        std::cout << "M: " << M << std::endl;
-    
+        std::cerr << "M: " << M << std::endl;
 
 
-       
+
+
         hnswlib::L2Space l2space(vecdim);
         float *mass = new float[vecsize * vecdim];
         input.read((char *)mass, vecsize * vecdim * sizeof(float));
         input.close();
-        
+
         appr_alg = new hnswlib::HierarchicalNSW<float>(&l2space, vecsize, M, efConstruction);
-        std::cout << "Building index\n";
+        std::cerr << "Building index\n";
         double t1 = omp_get_wtime();
         for (int i = 0; i < 1; i++) {
             appr_alg->addPoint((void *)(mass + vecdim*i), (size_t)i);
@@ -216,8 +216,8 @@ int main(int argc, char** argv) {
             appr_alg->addPoint((void *)(mass + vecdim*i), (size_t)i);
         }
         double t2 = omp_get_wtime();
- 
-        std::cout << "Index built, time=" << t2 - t1 << " s" << "\n";
+
+        std::cerr << "Index built, time=" << t2 - t1 << " s" << "\n";
         appr_alg->SaveIndex(graphname.data());
         delete appr_alg;
         delete mass;
@@ -238,7 +238,7 @@ int main(int argc, char** argv) {
             printError("Query file was not specified");
             return 0;
         }
-        std::cout << "Query filename: " << queryname << std::endl;
+        std::cerr << "Query filename: " << queryname << std::endl;
 
 
 
@@ -255,9 +255,9 @@ int main(int argc, char** argv) {
             printError("Query size was not specified");
             return 0;
         }
-        std::cout << "Query size: " << qsize << std::endl;
-        
-        
+        std::cerr << "Query size: " << qsize << std::endl;
+
+
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--queryDim" || std::string(argv[i]) == "--dimension" || std::string(argv[i]) == "--queryDimension") {
                 if (sscanf(argv[i + 1], "%d", &vecdim) != 1 || vecdim <= 0) {
@@ -271,9 +271,9 @@ int main(int argc, char** argv) {
             printError("Query dimension was not specified");
             return 0;
         }
-        std::cout << "Query dimension: " << vecdim << std::endl;
-        
-        
+        std::cerr << "Query dimension: " << vecdim << std::endl;
+
+
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--inGraph" || std::string(argv[i]) == "--inputGraph") {
                 std::ifstream inGraph(argv[i + 1]);
@@ -290,10 +290,10 @@ int main(int argc, char** argv) {
             printError("Filename of the input graph was not specified");
             return 0;
         }
-        std::cout << "Input graph: " << graphname << std::endl;
+        std::cerr << "Input graph: " << graphname << std::endl;
 
 
-        
+
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--efSearch") {
                 if (sscanf(argv[i + 1], "%d", &efSearch) != 1 || efSearch <= 0) {
@@ -303,8 +303,8 @@ int main(int argc, char** argv) {
                 break;
             }
         }
-        std::cout << "efSearch: " << efSearch << std::endl;
-        
+        std::cerr << "efSearch: " << efSearch << std::endl;
+
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--topK") {
                 if (sscanf(argv[i + 1], "%d", &topK) != 1 || topK <= 0) {
@@ -314,8 +314,8 @@ int main(int argc, char** argv) {
                 break;
             }
         }
-        std::cout << "Top size: " << topK << std::endl;
-        
+        std::cerr << "Top size: " << topK << std::endl;
+
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--output" || std::string(argv[i]) == "--out") {
                 std::ofstream output(argv[i + 1]);
@@ -329,9 +329,9 @@ int main(int argc, char** argv) {
             }
         }
         if (outputname.empty()) {
-            std::cout << "Output file: " << "stdout" << std::endl;
+            std::cerr << "Output file: " << "stdout" << std::endl;
         } else {
-            std::cout << "Output file: " << outputname << std::endl;
+            std::cerr << "Output file: " << outputname << std::endl;
         }
 
 
@@ -343,18 +343,23 @@ int main(int argc, char** argv) {
         inputQ.read((char *)massQ, qsize * vecdim * sizeof(float));
         inputQ.close();
 
+        for(int i = 0; i < vecdim; i++) {
+            std::cerr << massQ[i] << " ";
+        }
+        std::cerr << std::endl;
+
         std::priority_queue< std::pair< float, labeltype >> gt[qsize];
-		
+
         appr_alg = new hnswlib::HierarchicalNSW<float>(&l2space, graphname.data(), false);
         appr_alg->setEf(efSearch);
         std::ofstream fres;
         if (!outputname.empty()) {
             fres.open(outputname);
         }
-       
+
         auto start = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < qsize; i++) {
-            gt[i] = appr_alg->searchKnn(massQ + vecdim*i, topK);
+            gt[i] = appr_alg->searchKnn(massQ + vecdim * i, topK);
         }
         auto end = std::chrono::high_resolution_clock::now();
         for (int i = 0; i < qsize; i++) {
@@ -380,7 +385,7 @@ int main(int argc, char** argv) {
         if (!outputname.empty()) {
             fres.close();
         }
-        std::cout << "Average query time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / (double)qsize << "ms" << std::endl;
+        std::cerr << "Average query time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / (double)qsize << "ms" << std::endl;
         delete appr_alg;
         delete massQ;
     }
