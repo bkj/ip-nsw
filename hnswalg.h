@@ -28,6 +28,8 @@ namespace hnswlib {
     }
     HierarchicalNSW(SpaceInterface<dist_t> *s, const string &location, bool nmslib = false) {
       LoadIndex(location, s);
+      std::cerr << "Exiting early after dumping edgelist to stdout" << std::endl;
+      exit(0);
     }
     HierarchicalNSW(SpaceInterface<dist_t> *s, size_t maxElements, size_t M, size_t efConstruction) :
       ll_locks(maxElements), elementLevels(maxElements) {
@@ -224,7 +226,7 @@ namespace hnswlib {
       while (!candidateSet.empty()) {
 
         std::pair<dist_t, tableint> curr_el_pair = candidateSet.top();
-        std::cerr << "curr_el_pair.first:" << curr_el_pair.first << " curr_el_pair.second:" << curr_el_pair.second << std::endl;
+        // std::cerr << "curr_el_pair.first:" << curr_el_pair.first << " curr_el_pair.second:" << curr_el_pair.second << std::endl;
 
         if ((-curr_el_pair.first) > lowerBound) {
           break;
@@ -665,6 +667,7 @@ namespace hnswlib {
       readBinaryPOD(input, efConstruction_);
 
       // >>
+      std::cerr << "Params:" << std::endl;
       std::cerr << "offsetLevel0_:" << offsetLevel0_ << std::endl;
       std::cerr << "maxelements_:" << maxelements_ << std::endl;
       std::cerr << "cur_element_count:" << cur_element_count << std::endl;
@@ -688,6 +691,7 @@ namespace hnswlib {
 
       data_level0_memory_ = (char *)malloc(maxelements_*size_data_per_element_);
       input.read(data_level0_memory_, maxelements_*size_data_per_element_);
+
       // >>
       for(int i = 0; i < maxelements_; i++) {
         int level = 0;
@@ -719,28 +723,18 @@ namespace hnswlib {
           elementLevels[i] = linkListSize / size_links_per_element_;
           linkLists_[i]    = (char *)malloc(linkListSize);
           input.read(linkLists_[i], linkListSize);
-
-          // if(i >= enterpoint_node) {
-            // std::cout << "i=" << i << std::endl;
-            // std::cout << "elementLevels[i]=" << elementLevels[i] << std::endl;
-            // std::cout << "linkListSize=" << linkListSize << std::endl;
-            for (int level = elementLevels[i]; level > 0; level--) {
-              // std::cout << "level=" << level << std::endl;
-              int *data;
-              data = (int *)(linkLists_[i] + (level - 1) * size_links_per_element_);
-              int size = *data;
-              // std::cout << "size=" << size << std::endl;
-              tableint *datal = (tableint *)(data + 1);
-              for (int j = 0; j < size; j++) {
-                tableint neib = datal[j];
-                std::cout << level << " " << getExternalLabel(i) << " " << getExternalLabel(neib) << std::endl;
-              }
+          for (int level = elementLevels[i]; level > 0; level--) {
+            int *data;
+            data = (int *)(linkLists_[i] + (level - 1) * size_links_per_element_);
+            int size = *data;
+            tableint *datal = (tableint *)(data + 1);
+            for (int j = 0; j < size; j++) {
+              tableint neib = datal[j];
+              std::cout << level << " " << getExternalLabel(i) << " " << getExternalLabel(neib) << std::endl;
             }
-          // }
+          }
         }
       }
-      // std::cerr << "a=" << a << std::endl;
-      // std::cerr << "b=" << b << std::endl;
 
       input.close();
       size_t predicted_size_per_element = size_data_per_element_ + sizeof(void*) + 8 + 8 + 2 * 8;
@@ -748,5 +742,4 @@ namespace hnswlib {
       return;
     }
   };
-
 }

@@ -101,7 +101,6 @@ int main(int argc, char** argv) {
 
     std::cerr << "Mode: " << mode << std::endl;
 
-
     if (mode == "database") {
         for (int i = 1; i < argc - 1; i++) {
             if (std::string(argv[i]) == "--d" || std::string(argv[i]) == "--data" || std::string(argv[i]) == "--database") {
@@ -120,7 +119,6 @@ int main(int argc, char** argv) {
             return 0;
         }
         std::cerr << "Database file: " << dataname << std::endl;
-
 
 
         for (int i = 1; i < argc - 1; i++) {
@@ -196,8 +194,6 @@ int main(int argc, char** argv) {
             }
         }
         std::cerr << "M: " << M << std::endl;
-
-
 
 
         hnswlib::L2Space l2space(vecdim);
@@ -333,10 +329,6 @@ int main(int argc, char** argv) {
         } else {
             std::cerr << "Output file: " << outputname << std::endl;
         }
-
-
-
-
 
         hnswlib::L2Space l2space(vecdim);
         float *massQ = new float[qsize * vecdim];
