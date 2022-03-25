@@ -13,10 +13,12 @@ from tqdm import tqdm
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--inpath',  type=str, default='edgelist')
-    parser.add_argument('--outpath', type=str, default='graphs.pkl')
-    parser.add_argument('--seed',    type=int, default=123)
-    return parser.parse_args()
+    parser.add_argument('--inpath',  type=str)
+    args = parser.parse_args()
+    
+    args.outpath = args.inpath.replace('.edgelist', '.pkl')
+    
+    return args
 
 
 if __name__ == '__main__':
@@ -29,6 +31,9 @@ if __name__ == '__main__':
     print('prep.py: reading %s' % args.inpath, file=sys.stderr)
     edges = pd.read_csv(args.inpath, sep=' ', names=['level', 'src', 'dst'])
     print('prep.py: read %d edges' % edges.shape[0], file=sys.stderr)
+    
+    print(set(edges.level))
+    assert len(set(edges.level)) == 4
     
     # --
     # Make graphs

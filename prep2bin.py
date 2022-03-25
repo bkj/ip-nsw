@@ -15,6 +15,7 @@ import argparse
 import numpy as np
 from tqdm import tqdm
 from time import time
+import faiss
 
 from scipy import sparse
 
@@ -47,17 +48,19 @@ def parse_args():
 args = parse_args()
 
 print('reading', file=sys.stderr)
-graphs  = pickle.load(open('graphs.pkl', 'rb'))
+graphs  = pickle.load(open(f'./data/{args.db_size}-{args.dim}.pkl', 'rb'))
 data    = np.fromfile(f'./data/{args.db_size}-{args.dim}.bin', dtype=np.float32).reshape(args.db_size, args.dim)
 queries = data[np.random.choice(data.shape[0], args.n_query, replace=False)]
 
 # >>
 print('compute ground truth')
-sim  = (queries @ data.T)
-topk = np.argsort(-sim, axis=-1)
-np.save('data.npy', data)
-np.save('queries.npy', queries)
-np.save('cache.topk.npy', topk)
+findex = faiss.IndexFlatIP(data.shape[1])
+findex.add(data)
+_, topk = findex.search(queries, 1024)
+
+np.save(f'data/{args.db_size}-{args.dim}.data.npy', data)
+np.save(f'data/{args.db_size}-{args.dim}.queries.npy', queries)
+np.save(f'data/{args.db_size}-{args.dim}.cache.topk.npy', topk)
 # <<
 
 print('converting', file=sys.stderr)
@@ -84,8 +87,8 @@ G3_nnz   = np.array([G3.nnz]).astype(np.int32)
 data    = data.astype(np.float32)
 queries = queries.astype(np.float32)
 
-print('writing cache.bin')
-with open('cache.bin', 'wb') as f:
+print(f'writing data/{args.db_size}-{args.dim}.cache.bin')
+with open(f'data/{args.db_size}-{args.dim}.cache.bin', 'wb') as f:
   _ = f.write(bytearray(data_shape))
   _ = f.write(bytearray(data.ravel()))
 
