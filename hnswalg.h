@@ -26,11 +26,13 @@ namespace hnswlib {
     HierarchicalNSW(SpaceInterface<dist_t> *s) {
 
     }
+    
     HierarchicalNSW(SpaceInterface<dist_t> *s, const string &location, bool nmslib = false) {
       LoadIndex(location, s);
       std::cerr << "Exiting early after dumping edgelist to stdout" << std::endl;
       exit(0);
     }
+    
     HierarchicalNSW(SpaceInterface<dist_t> *s, size_t maxElements, size_t M, size_t efConstruction) :
       ll_locks(maxElements), elementLevels(maxElements) {
       maxelements_ = maxElements;
@@ -667,23 +669,23 @@ namespace hnswlib {
       readBinaryPOD(input, efConstruction_);
 
       // >>
-      std::cerr << "Params:" << std::endl;
-      std::cerr << "offsetLevel0_:" << offsetLevel0_ << std::endl;
-      std::cerr << "maxelements_:" << maxelements_ << std::endl;
-      std::cerr << "cur_element_count:" << cur_element_count << std::endl;
-      std::cerr << "size_data_per_element_:" << size_data_per_element_ << std::endl;
-      std::cerr << "label_offset_:" << label_offset_ << std::endl;
-      std::cerr << "offsetData_:" << offsetData_ << std::endl;
-      std::cerr << "maxlevel_:" << maxlevel_ << std::endl;
-      std::cerr << "enterpoint_node:" << enterpoint_node << std::endl;
-      std::cerr << "maxM_:" << maxM_ << std::endl;
-      std::cerr << "maxM0_:" << maxM0_ << std::endl;
-      std::cerr << "M_:" << M_ << std::endl;
-      std::cerr << "mult_:" << mult_ << std::endl;
-      std::cerr << "efConstruction_:" << efConstruction_ << std::endl;
+      std::cerr << "------------------------------------------------ " << std::endl;
+      std::cerr << "Params                 : " << std::endl;
+      std::cerr << "offsetLevel0_          : " << offsetLevel0_ << std::endl;
+      std::cerr << "maxelements_           : " << maxelements_ << std::endl;
+      std::cerr << "cur_element_count      : " << cur_element_count << std::endl;
+      std::cerr << "size_data_per_element_ : " << size_data_per_element_ << std::endl;
+      std::cerr << "label_offset_          : " << label_offset_ << std::endl;
+      std::cerr << "offsetData_            : " << offsetData_ << std::endl;
+      std::cerr << "maxlevel_              : " << maxlevel_ << std::endl;
+      std::cerr << "enterpoint_node        : " << enterpoint_node << std::endl;
+      std::cerr << "maxM_                  : " << maxM_ << std::endl;
+      std::cerr << "maxM0_                 : " << maxM0_ << std::endl;
+      std::cerr << "M_                     : " << M_ << std::endl;
+      std::cerr << "mult_                  : " << mult_ << std::endl;
+      std::cerr << "efConstruction_        : " << efConstruction_ << std::endl;
+      std::cerr << "------------------------------------------------ " << std::endl;
       // <<
-
-      cerr << "efConstruction_:" << efConstruction_ << "\n";
 
       data_size_       = s->get_data_size();
       fstdistfunc_     = s->get_dist_func();

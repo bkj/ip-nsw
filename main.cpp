@@ -335,10 +335,10 @@ int main(int argc, char** argv) {
         inputQ.read((char *)massQ, qsize * vecdim * sizeof(float));
         inputQ.close();
 
-        for(int i = 0; i < vecdim; i++) {
-            std::cerr << massQ[i] << " ";
-        }
-        std::cerr << std::endl;
+        // for(int i = 0; i < vecdim; i++) {
+        //     std::cerr << massQ[i] << " ";
+        // }
+        // std::cerr << std::endl;
 
         std::priority_queue< std::pair< float, labeltype >> gt[qsize];
 
