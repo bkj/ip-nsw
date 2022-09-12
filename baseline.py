@@ -33,26 +33,26 @@ act     = np.load(topk_path)[:,:n_results]
 # --
 # Run CPU brute-force
 
-# findex = faiss.IndexFlatIP(data.shape[1])
-# findex.add(data)
+findex = faiss.IndexFlatIP(data.shape[1])
+findex.add(data)
+
+t       = time()
+_, pred = findex.search(queries, n_results)
+ms      = int((time() - t) * 1_000_000)
+
+recall = compute_recall(act, pred)
+print(f'recall={recall} | n_data={data.shape[0]} | ms={ms} | throughput={1e6 * queries.shape[0] / ms}')
+
+# # --
+
+# res    = faiss.StandardGpuResources()  # use a single GPU
+# gindex = faiss.IndexFlatIP(data.shape[1])
+# gindex = faiss.index_cpu_to_gpu(res, 0, gindex)
+# gindex.add(data)
 
 # t       = time()
-# _, pred = findex.search(queries, n_results)
+# _, pred = gindex.search(queries, n_results)
 # ms      = int((time() - t) * 1_000_000)
 
 # recall = compute_recall(act, pred)
 # print(f'recall={recall} | ms={ms} | throughput={1e6 * queries.shape[0] / ms}')
-
-# --
-
-res    = faiss.StandardGpuResources()  # use a single GPU
-gindex = faiss.IndexFlatIP(data.shape[1])
-gindex = faiss.index_cpu_to_gpu(res, 0, gindex)
-gindex.add(data)
-
-t       = time()
-_, pred = gindex.search(queries, n_results)
-ms      = int((time() - t) * 1_000_000)
-
-recall = compute_recall(act, pred)
-print(f'recall={recall} | ms={ms} | throughput={1e6 * queries.shape[0] / ms}')
